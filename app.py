@@ -10,7 +10,12 @@ from sqlalchemy import inspect, text
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-only-change-this-secret')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mealplanner.db'
+database_url = os.environ.get('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+if not database_url:
+    database_url = 'sqlite:////tmp/mealplanner.db' if os.environ.get('VERCEL') else 'sqlite:///mealplanner.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -895,7 +900,7 @@ def shopping_list():
 def not_found(e):
     return render_template('404.html'), 404
 
-if __name__ == '__main__':
+def initialize_database():
     with app.app_context():
         db.create_all()
         inspector = inspect(db.engine)
@@ -909,5 +914,9 @@ if __name__ == '__main__':
                 connection.execute(text("ALTER TABLE recipe ADD COLUMN youtube_url VARCHAR(300) DEFAULT ''"))
         seed_database()
         update_recipe_images()
-app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+
+initialize_database()
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
 

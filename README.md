@@ -50,6 +50,15 @@ Go to: **http://127.0.0.1:5000**
 
 For production, set a strong `SECRET_KEY` environment variable before starting the app. The built-in fallback is for local development only.
 
+## Deploy to Vercel
+
+1. Import this repository into Vercel.
+2. Set the `SECRET_KEY` environment variable to a long random value.
+3. Set `DATABASE_URL` to a hosted PostgreSQL connection string, such as one from Neon or Supabase.
+4. Deploy with the default project settings. Vercel uses `api/index.py` as the Flask entry point.
+
+SQLite is retained for local development. Vercel's filesystem is temporary, so a hosted PostgreSQL database is required for persistent users, inventory, and meal plans.
+
 ## Default Demo Flow
 
 1. **Register** a new account at `/register`
