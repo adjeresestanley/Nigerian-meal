@@ -649,7 +649,7 @@ def index():
 
 @app.route('/images/<path:filename>')
 def recipe_image(filename):
-    return send_from_directory(os.path.join(app.root_path, 'images'), filename)
+    return send_from_directory(os.path.join(app.root_path, 'public', 'images'), filename)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

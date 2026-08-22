@@ -7,6 +7,7 @@
       "config": {
         "includeFiles": [
           "images/**",
+          "public/images/**",
           "templates/**",
           "static/**"
         ]
@@ -16,7 +17,7 @@
   "routes": [
     {
       "src": "/images/(.*)",
-      "dest": "/images/$1"
+      "dest": "api/index.py"
     },
     {
       "src": "/(.*)",
