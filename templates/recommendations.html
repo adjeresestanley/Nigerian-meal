@@ -35,7 +35,7 @@
             <div class="card h-100">
                 <div class="position-relative">
                     {% if recipe.image_url %}
-                    <img class="recipe-img" src="{{ url_for('static', filename='images/' ~ recipe.image_url) }}" alt="{{ recipe.name }}">
+                    <img class="recipe-img" src="{{ url_for('recipe_image', filename=recipe.image_url) }}" alt="{{ recipe.name }}">
                     {% else %}
                     <div class="recipe-img-placeholder">
                         <i class="bi bi-egg-fried"></i>

@@ -23,7 +23,7 @@
                     </div>
                 </div>
                 {% if recipe.image_url %}
-                <img class="recipe-img recipe-detail-img mb-4" src="{{ url_for('static', filename='images/' ~ recipe.image_url) }}" alt="{{ recipe.name }}">
+                <img class="recipe-img recipe-detail-img mb-4" src="{{ url_for('recipe_image', filename=recipe.image_url) }}" alt="{{ recipe.name }}">
                 {% else %}
                 <div class="recipe-img-placeholder mb-4" style="height: 250px; border-radius: 12px;">
                     <i class="bi bi-egg-fried" style="font-size: 5rem;"></i>
