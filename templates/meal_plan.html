@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Meal Plan - NaijaMeal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Weekly Meal Plan</h2>
+            <p class="text-muted mb-0">Schedule your week with inventory-aware Nigerian dishes</p>
+        </div>
+        <a href="{{ url_for('shopping_list') }}" class="btn btn-accent"><i class="bi bi-cart-check me-2"></i>Generate Shopping List</a>
+    </div>
+
+    <form method="POST" action="{{ url_for('meal_plan') }}">
+        <div class="row g-4">
+            {% for day in days %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-calendar-day me-2" style="color: var(--primary-green);"></i>{{ day }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <label class="form-label fw-semibold">Select Dinner</label>
+                        <select name="recipe_{{ day }}" class="form-select">
+                            <option value="">-- Choose a recipe --</option>
+                            {% for item in candidates %}
+                            {% set recipe = item.recipe %}
+                            <option value="{{ recipe.id }}" {% if plan_items.get(day) and plan_items[day].recipe_id == recipe.id %}selected{% endif %}>
+                                {{ recipe.name }} ({{ item.match_score }}% match)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if plan_items.get(day) %}
+                        <div class="mt-3 p-2 rounded" style="background: var(--light-green);">
+                            <small class="fw-semibold">Currently selected:</small><br>
+                            <span>{{ plan_items[day].recipe.name }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg px-5"><i class="bi bi-save me-2"></i>Save Meal Plan</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - NaijaMeal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="feature-icon me-3 mb-0"><i class="bi bi-person-gear"></i></div>
+                    <div>
+                        <h3 class="fw-bold mb-0">Edit Profile</h3>
+                        <p class="text-muted mb-0">Update your preferences and constraints</p>
+                    </div>
+                </div>
+                <form method="POST" action="{{ url_for('profile') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Full Name</label>
+                            <input type="text" name="full_name" class="form-control" value="{{ current_user.full_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Household Size</label>
+                            <input type="number" name="household_size" class="form-control" value="{{ current_user.household_size }}" min="1">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Calorie Limit / Meal</label>
+                            <input type="number" name="calorie_limit" class="form-control" value="{{ current_user.calorie_limit }}" min="100">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Dietary Preference</label>
+                            <select name="dietary_preference" class="form-select">
+                                <option value="" {% if not current_user.dietary_preference %}selected{% endif %}>None</option>
+                                <option value="vegetarian" {% if current_user.dietary_preference == 'vegetarian' %}selected{% endif %}>Vegetarian</option>
+                                <option value="low-carb" {% if current_user.dietary_preference == 'low-carb' %}selected{% endif %}>Low-Carb</option>
+                                <option value="high-protein" {% if current_user.dietary_preference == 'high-protein' %}selected{% endif %}>High-Protein</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Health Conditions</label>
+                        <input type="text" name="health_conditions" class="form-control" value="{{ current_user.health_conditions }}" placeholder="e.g., diabetes, hypertension">
+                        <div class="form-text">Comma-separated list of conditions for strict filtering.</div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Allergies</label>
+                        <input type="text" name="allergies" class="form-control" value="{{ current_user.allergies }}" placeholder="e.g., groundnuts, seafood">
+                        <div class="form-text">Any recipe containing these ingredients will be excluded from recommendations.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 btn-lg">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

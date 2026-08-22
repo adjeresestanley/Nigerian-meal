@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Recipes - NaijaMeal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Nigerian Recipe Collection</h2>
+            <p class="text-muted mb-0">Browse our curated database of local dishes</p>
+        </div>
+        <div>
+            <a href="{{ url_for('recipes') }}" class="btn btn-outline-primary btn-sm {% if not selected_category %}active{% endif %}">All</a>
+            {% for cat in categories %}
+            <a href="{{ url_for('recipes', category=cat) }}" class="btn btn-outline-primary btn-sm {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <form method="GET" action="{{ url_for('recipes') }}" class="row g-2 mb-4">
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+        <div class="col-sm-9 col-md-6">
+            <label for="recipe-search" class="visually-hidden">Search recipes</label>
+            <input id="recipe-search" type="search" name="search" value="{{ search }}" class="form-control" placeholder="Search Nigerian recipes...">
+        </div>
+        <div class="col-sm-3 col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Search</button>
+        </div>
+    </form>
+
+    <div class="row g-4">
+        {% for recipe in recipes %}
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100">
+                {% if recipe.image_url %}
+                <img class="recipe-img" src="{{ url_for('recipe_image', filename=recipe.image_url) }}" alt="{{ recipe.name }}">
+                {% else %}
+                <div class="recipe-img-placeholder">
+                    <i class="bi bi-egg-fried"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge-category">{{ recipe.category }}</span>
+                        <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ recipe.prep_time_minutes }}m</small>
+                    </div>
+                    <h5 class="card-title fw-bold">{{ recipe.name }}</h5>
+                    <p class="card-text text-muted small">{{ recipe.description[:80] }}...</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="small"><i class="bi bi-fire me-1 text-danger"></i>{{ recipe.calories_per_serving }} kcal</span>
+                        <span class="small fw-semibold">&#8358;{{ "{:,.0f}".format(recipe.estimated_cost) }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 pb-3">
+                    <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}" class="btn btn-primary w-100 btn-sm">View Recipe</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if not recipes %}
+    <div class="alert alert-info mt-4">No recipes match your search.</div>
+    {% endif %}
+</div>
+{% endblock %}

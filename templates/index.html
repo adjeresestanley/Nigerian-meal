@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-3">Smart Meal Planning for Nigerian Homes</h1>
+        <p class="lead mb-4">Automate your weekly meals with inventory-aware recommendations, health constraints, and dynamic shopping lists.</p>
+        {% if not current_user.is_authenticated %}
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('register') }}" class="btn btn-accent btn-lg px-4">Get Started</a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-4">Sign In</a>
+        </div>
+        {% else %}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-accent btn-lg px-4">Go to Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">{{ recipe_count }}</div>
+                <div class="text-muted">Nigerian Recipes</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">7</div>
+                <div class="text-muted">Meal Categories</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="text-muted">Constraint-Based</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number">0</div>
+                <div class="text-muted">ML Complexity</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <h2 class="text-center mb-5 fw-bold" style="color: var(--dark);">How It Works</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 p-4 text-center">
+                <div class="d-flex justify-content-center">
+                    <div class="feature-icon"><i class="bi bi-person-gear"></i></div>
+                </div>
+                <h4 class="fw-bold">1. Set Your Profile</h4>
+                <p class="text-muted">Enter your health conditions, allergies, and dietary preferences.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 text-center">
+                <div class="d-flex justify-content-center">
+                    <div class="feature-icon"><i class="bi bi-box-seam"></i></div>
+                </div>
+                <h4 class="fw-bold">2. Log Your Inventory</h4>
+                <p class="text-muted">Tell us what you already have in your kitchen. The system tracks your pantry stock.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 text-center">
+                <div class="d-flex justify-content-center">
+                    <div class="feature-icon"><i class="bi bi-magic"></i></div>
+                </div>
+                <h4 class="fw-bold">3. Get Smart Recommendations</h4>
+                <p class="text-muted">Receive Nigerian recipe suggestions ranked by how well they match your pantry and health needs.</p>
+            </div>
+        </div>
+    </div>
+    <div class="row g-4 mt-2">
+        <div class="col-md-4 offset-md-2">
+            <div class="card h-100 p-4 text-center">
+                <div class="d-flex justify-content-center">
+                    <div class="feature-icon"><i class="bi bi-calendar-week"></i></div>
+                </div>
+                <h4 class="fw-bold">4. Plan Your Week</h4>
+                <p class="text-muted">Select meals for each day of the week from your personalized recommendations.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 text-center">
+                <div class="d-flex justify-content-center">
+                    <div class="feature-icon"><i class="bi bi-cart-check"></i></div>
+                </div>
+                <h4 class="fw-bold">5. Generate Shopping List</h4>
+                <p class="text-muted">The system compares your meal plan against inventory and outputs only what you need to buy.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="card p-5" style="background: linear-gradient(135deg, var(--light-green), white); border: 1px solid #b7e4c7;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3 class="fw-bold mb-3" style="color: var(--dark);">Built for the Nigerian Context</h3>
+                <p class="mb-0">Unlike global platforms, NaijaMeal understands local staples — from Egusi to Ofada Rice, from Swallows to Pepper Soup. The constraint engine enforces your health rules before any recommendation is shown.</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="{{ url_for('recipes') }}" class="btn btn-primary btn-lg">Browse Recipes</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - NaijaMeal{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <i class="bi bi-compass display-1" style="color: var(--primary-green);"></i>
+    <h1 class="fw-bold mt-3">Page not found</h1>
+    <p class="text-muted">The page you requested does not exist.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Return Home</a>
+</div>
+{% endblock %}

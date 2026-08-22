@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}My Inventory - NaijaMeal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle me-2" style="color: var(--primary-green);"></i>Add Item</h5>
+                <form method="POST" action="{{ url_for('inventory') }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ingredient</label>
+                        <select name="ingredient_id" class="form-select" required>
+                            <option value="">Select ingredient...</option>
+                            {% for ing in ingredients %}
+                            <option value="{{ ing.id }}">{{ ing.name }} ({{ ing.unit }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Quantity</label>
+                        <input type="number" name="quantity" class="form-control" step="0.1" min="0.1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-price" class="form-label fw-semibold">Price per unit (&#8358;)</label>
+                        <input id="new-price" type="number" name="price_per_unit" class="form-control" step="0.01" min="0" placeholder="Optional; use catalog price if blank">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Add to Inventory</button>
+                </form>
+            </div>
+            <div class="card p-4">
+                <h6 class="fw-bold">Tips</h6>
+                <ul class="small text-muted mb-0 ps-3">
+                    <li>Keep your inventory updated for accurate recommendations.</li>
+                    <li>Add staple items like Rice, Garri, and Palm Oil first.</li>
+                    <li>The engine ranks recipes by how many ingredients you already own.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-box-seam me-2" style="color: var(--primary-green);"></i>My Kitchen Inventory</h5>
+                    <span class="badge bg-secondary">{{ inventory|length }} items</span>
+                </div>
+                <form method="GET" action="{{ url_for('inventory') }}" class="input-group mb-3">
+                    <label for="inventory-search" class="visually-hidden">Search inventory</label>
+                    <input id="inventory-search" type="search" name="search" value="{{ search }}" class="form-control" placeholder="Search ingredients...">
+                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i>Search</button>
+                    {% if search %}<a href="{{ url_for('inventory') }}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+                </form>
+                {% if inventory %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ingredient</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Price / Unit</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory %}
+                            <tr>
+                                <td class="fw-semibold">{{ item.ingredient.name }}</td>
+                                <td><span class="badge bg-light text-dark">{{ item.ingredient.category }}</span></td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('edit_inventory', inv_id=item.id) }}" class="d-flex gap-2">
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="0.1" step="0.1" class="form-control form-control-sm" aria-label="Quantity for {{ item.ingredient.name }}">
+                                        <input type="number" name="price_per_unit" value="{{ item.price_per_unit if item.price_per_unit is not none else item.ingredient.price_per_unit }}" min="0" step="0.01" class="form-control form-control-sm" aria-label="Price per unit for {{ item.ingredient.name }}">
+                                        <button type="submit" class="btn btn-outline-primary btn-sm" title="Save quantity and price"><i class="bi bi-check-lg"></i></button>
+                                    </form>
+                                </td>
+                                <td>{{ item.ingredient.unit }}</td>
+                                <td>&#8358;{{ "{:,.2f}".format(item.price_per_unit if item.price_per_unit is not none else item.ingredient.price_per_unit) }}</td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('delete_inventory', inv_id=item.id) }}" onsubmit="return confirm('Remove this item?')">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Remove {{ item.ingredient.name }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-4 text-muted"></i>
+                    <p class="text-muted mt-2">Your inventory is empty. Add items to get recommendations.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

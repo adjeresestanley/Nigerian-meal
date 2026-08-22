@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping List - NaijaMeal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Shopping List</h2>
+            <p class="text-muted mb-0">Items you need to buy based on your meal plan vs. current inventory</p>
+        </div>
+        <button onclick="window.print()" class="btn btn-outline-primary"><i class="bi bi-printer me-2"></i>Print List</button>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-cart-check me-2" style="color: var(--primary-green);"></i>Required Items</h5>
+                    <span class="badge bg-secondary">{{ items|length }} items missing</span>
+                </div>
+
+                <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-cash-coin me-2"></i>Estimated cost to buy</span>
+                    <strong>&#8358;{{ "{:,.0f}".format(total_cost_estimate) }}</strong>
+                </div>
+
+                {% if items %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Ingredient</th>
+                                <th>Category</th>
+                                <th class="text-center">Needed</th>
+                                <th class="text-center">In Stock</th>
+                                <th class="text-center">To Buy</th>
+                                <th>Unit</th>
+                                <th>Price / Unit</th>
+                                <th>Estimate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td class="fw-semibold">{{ item.ingredient.name }}</td>
+                                <td><span class="badge bg-light text-dark">{{ item.ingredient.category }}</span></td>
+                                <td class="text-center">{{ item.quantity_needed }}</td>
+                                <td class="text-center text-muted">{{ item.quantity_have }}</td>
+                                <td class="text-center fw-bold" style="color: var(--accent-orange);">{{ item.quantity_missing }}</td>
+                                <td>{{ item.ingredient.unit }}</td>
+                                <td>&#8358;{{ "{:,.2f}".format(item.unit_price) }}</td>
+                                <td>&#8358;{{ "{:,.2f}".format(item.estimated_cost) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-success mt-3">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong>Smart reconciliation complete!</strong> This list excludes items you already have in your pantry. Update your <a href="{{ url_for('inventory') }}">inventory</a> anytime for accuracy.
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-bag-check display-4 text-success"></i>
+                    <h5 class="fw-bold mt-3">You have everything!</h5>
+                    <p class="text-muted">Your current inventory covers all ingredients needed for your meal plan.</p>
+                    <a href="{{ url_for('meal_plan') }}" class="btn btn-primary">Adjust Meal Plan</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

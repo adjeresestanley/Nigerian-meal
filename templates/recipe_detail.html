@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.name }} - NaijaMeal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('recipes') }}">Recipes</a></li>
+                    <li class="breadcrumb-item active">{{ recipe.name }}</li>
+                </ol>
+            </nav>
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge-category mb-2 d-inline-block">{{ recipe.category }}</span>
+                        <h2 class="fw-bold mb-1">{{ recipe.name }}</h2>
+                    </div>
+                    <div class="text-end">
+                        <div class="match-badge">&#8358;{{ "{:,.0f}".format(recipe.estimated_cost) }}</div>
+                    </div>
+                </div>
+                {% if recipe.image_url %}
+                <img class="recipe-img recipe-detail-img mb-4" src="{{ url_for('recipe_image', filename=recipe.image_url) }}" alt="{{ recipe.name }}">
+                {% else %}
+                <div class="recipe-img-placeholder mb-4" style="height: 250px; border-radius: 12px;">
+                    <i class="bi bi-egg-fried" style="font-size: 5rem;"></i>
+                </div>
+                {% endif %}
+                <p class="lead">{{ recipe.description }}</p>
+
+                <div class="video-bubble mb-4">
+                    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-youtube text-danger me-2"></i>Recipe Video</h5>
+                        {% if youtube_embed_url %}<span class="small text-muted">YouTube</span>{% endif %}
+                    </div>
+                    {% if youtube_embed_url %}
+                    <div class="video-frame">
+                        <iframe src="{{ youtube_embed_url }}" title="{{ recipe.name }} recipe video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+                    {% else %}
+                    <a class="video-search-bubble" href="{{ youtube_search_url }}" target="_blank" rel="noopener noreferrer">
+                        <i class="bi bi-play-circle-fill"></i>
+                        <span>Find a {{ recipe.name }} cooking video on YouTube</span>
+                        <i class="bi bi-box-arrow-up-right ms-auto"></i>
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded" style="background: var(--light-green);">
+                            <small class="text-muted d-block">Prep Time</small>
+                            <strong><i class="bi bi-clock me-1"></i>{{ recipe.prep_time_minutes }} minutes</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded" style="background: var(--light-green);">
+                            <small class="text-muted d-block">Calories</small>
+                            <strong><i class="bi bi-fire me-1 text-danger"></i>{{ recipe.calories_per_serving }} kcal/serving</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded" style="background: var(--light-green);">
+                            <small class="text-muted d-block">Estimated Cost</small>
+                            <strong>&#8358;{{ "{:,.0f}".format(recipe.estimated_cost) }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                {% if recipe.dietary_tags %}
+                <div class="mb-4">
+                    <h5 class="fw-bold">Dietary Tags</h5>
+                    {% for tag in recipe.dietary_tags.split(',') %}
+                    <span class="badge bg-success me-1">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <h5 class="fw-bold mb-3">Ingredients</h5>
+                <ul class="list-group list-group-flush mb-4">
+                    {% for ri in ingredients %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-check-circle-fill me-2" style="color: var(--secondary-green);"></i>{{ ri.ingredient.name }}</span>
+                        <span class="fw-semibold">{{ ri.quantity }} {{ ri.ingredient.unit }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                {% if current_user.is_authenticated %}
+                <div class="alert {% if missing_ingredients %}alert-warning{% else %}alert-success{% endif %} mb-4">
+                    {% if missing_ingredients %}
+                    <h6 class="fw-bold"><i class="bi bi-cart me-2"></i>Missing from your inventory</h6>
+                    <ul class="mb-0">
+                        {% for item in missing_ingredients %}
+                        <li>{{ item.ingredient.name }}: {{ item.missing_quantity }} {{ item.ingredient.unit }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <strong><i class="bi bi-check-circle me-2"></i>You have all ingredients for this recipe.</strong>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <h5 class="fw-bold mb-3">Instructions</h5>
+                <div class="recipe-instructions p-3 rounded" style="background: #f8f9fa;">
+                    {{ recipe.instructions
+                        | replace('. 2. ', '.\n2. ')
+                        | replace('. 3. ', '.\n3. ')
+                        | replace('. 4. ', '.\n4. ')
+                        | replace('. 5. ', '.\n5. ')
+                        | replace('. 6. ', '.\n6. ')
+                    }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4 mb-4">
+                <h6 class="fw-bold">Want this in your plan?</h6>
+                <p class="small text-muted">Go to your meal planner to schedule this dish for any day of the week.</p>
+                <a href="{{ url_for('meal_plan') }}" class="btn btn-accent w-100">Plan This Meal</a>
+            </div>
+            <div class="card p-4">
+                <h6 class="fw-bold">Nutrition Note</h6>
+                <p class="small text-muted mb-0">Calorie estimates are per single serving. Adjust portion sizes based on your household size and dietary goals.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
