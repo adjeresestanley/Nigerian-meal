@@ -19,10 +19,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('VERCEL'))
+secure_cookies = os.environ.get('SESSION_COOKIE_SECURE', '').lower() in {'1', 'true', 'yes'}
+app.config['SESSION_COOKIE_SECURE'] = secure_cookies
 app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
-app.config['REMEMBER_COOKIE_SECURE'] = bool(os.environ.get('VERCEL'))
+app.config['REMEMBER_COOKIE_SECURE'] = secure_cookies
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
