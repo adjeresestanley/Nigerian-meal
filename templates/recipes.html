@@ -33,7 +33,7 @@
         <div class="col-md-4 col-lg-3">
             <div class="card h-100">
                 {% if recipe.image_url %}
-                <img class="recipe-img" src="{{ url_for('static', filename='images/' ~ recipe.image_url) }}" alt="{{ recipe.name }}">
+                <img class="recipe-img" src="{{ url_for('static', filename='images/' ~ recipe.image_url|lower|replace(' ', '-')) }}" alt="{{ recipe.name }}">
                 {% else %}
                 <div class="recipe-img-placeholder">
                     <i class="bi bi-egg-fried"></i>
