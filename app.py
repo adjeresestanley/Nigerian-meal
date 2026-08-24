@@ -17,6 +17,12 @@ if not database_url:
     database_url = 'sqlite:////tmp/mealplanner.db' if os.environ.get('VERCEL') else 'sqlite:///mealplanner.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('VERCEL'))
+app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
+app.config['REMEMBER_COOKIE_SECURE'] = bool(os.environ.get('VERCEL'))
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -692,7 +698,7 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.password_hash, password):
-            login_user(user)
+            login_user(user, remember=True)
             flash(f'Welcome back, {user.full_name}!', 'success')
             return redirect(url_for('dashboard'))
         else:
@@ -718,6 +724,22 @@ def dashboard():
 @login_required
 def profile():
     if request.method == 'POST':
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if new_password or confirm_password or current_password:
+            if not check_password_hash(current_user.password_hash, current_password):
+                flash('Current password is incorrect.', 'danger')
+                return redirect(url_for('profile'))
+            if len(new_password) < 8:
+                flash('New password must be at least 8 characters.', 'danger')
+                return redirect(url_for('profile'))
+            if new_password != confirm_password:
+                flash('New passwords do not match.', 'danger')
+                return redirect(url_for('profile'))
+            current_user.password_hash = generate_password_hash(new_password)
+
         current_user.full_name = request.form.get('full_name')
         current_user.household_size = request.form.get('household_size', type=int)
         current_user.health_conditions = request.form.get('health_conditions', '')
