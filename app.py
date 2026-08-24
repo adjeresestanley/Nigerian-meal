@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -7,14 +6,19 @@ from datetime import datetime
 import os
 from urllib.parse import urlparse, parse_qs, quote
 from sqlalchemy import inspect, text
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-only-change-this-secret')
 database_url = os.environ.get('DATABASE_URL')
 if database_url and database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 if not database_url:
-    database_url = 'sqlite:////tmp/mealplanner.db' if os.environ.get('VERCEL') else 'sqlite:///mealplanner.db'
+    if os.environ.get('VERCEL'):
+        raise RuntimeError('DATABASE_URL must be configured with a persistent PostgreSQL database on Vercel.')
+    database_url = 'sqlite:///mealplanner.db'
+
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -24,6 +28,7 @@ app.config['SESSION_COOKIE_SECURE'] = secure_cookies
 app.config['REMEMBER_COOKIE_HTTPONLY'] = True
 app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
 app.config['REMEMBER_COOKIE_SECURE'] = secure_cookies
+
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
