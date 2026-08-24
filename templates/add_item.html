@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Inventory Item</title>
+</head>
+<body>
+
+    <h2>Add New Item to Inventory</h2>
+
+    <!-- The form sends a POST request to your /add-item route -->
+    <form action="/add-item" method="POST">
+        
+        <div>
+            <label for="item_name">Item Name:</label>
+            <input type="text" id="item_name" name="item_name" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" required>
+        </div>
+        <br>
+
+        <div>
+            <label for="price">Price:</label>
+            <input type="number" id="price" name="price" step="0.01" required>
+        </div>
+        <br>
+
+        <button type="submit">Add to Database</button>
+
+    </form>
+
+</body>
+</html>
