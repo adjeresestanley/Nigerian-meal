@@ -38,7 +38,7 @@ RECIPE_IMAGES = {
     'Amala (Yam Flour)': 'amala.jpg',
     'Wheat Meal': 'wheat-meal.jpg',
     'Moi Moi': 'moi-moi.jpg',
-    'Akara': 'akara.jpg',
+    'Akara': 'Akara.jpg',
     'Pepper Soup': 'pepper-soup.jpeg',
     'Ofada Rice & Stew': 'ofada.jpg',
     'Stew': 'stew.jpg',
