@@ -1,6 +1,6 @@
 # NaijaMeal - Smart Recipe & Meal Planning System
 
-A web-based meal planning application tailored for Nigerian households, built with Flask and SQLite.
+A web-based meal planning application tailored for Nigerian households, built with Flask and PostgreSQL (Supabase) or SQLite for local development.
 
 ## Features
 
@@ -13,7 +13,7 @@ A web-based meal planning application tailored for Nigerian households, built wi
 ## Technology Stack
 
 - **Backend**: Python 3, Flask
-- **Database**: SQLite (via SQLAlchemy)
+- **Database**: PostgreSQL on Supabase or SQLite locally (via SQLAlchemy)
 - **Frontend**: HTML5, Bootstrap 5, Bootstrap Icons
 - **Authentication**: Flask-Login with Werkzeug password hashing
 
@@ -50,11 +50,20 @@ Go to: **http://127.0.0.1:5000**
 
 For production, set a strong `SECRET_KEY` environment variable before starting the app. The built-in fallback is for local development only.
 
+### Connect to Supabase
+
+1. Create a Supabase project and open **Project Settings > Database**.
+2. Copy the URI connection string. For Vercel or other serverless deployments, use the **Session pooler** connection string.
+3. Add it to `.env` as `SUPABASE_DB_URL` and replace the password placeholder. The URL must include `sslmode=require`.
+4. Start the app. SQLAlchemy creates the tables and seeds the recipe catalog on the first startup.
+
+The backend connects directly to Supabase PostgreSQL through SQLAlchemy; the Supabase URL and publishable key are not needed for this server-rendered Flask application. `DATABASE_URL` remains supported as a fallback for other PostgreSQL providers.
+
 ## Deploy to Vercel
 
 1. Import this repository into Vercel.
 2. Set the `SECRET_KEY` environment variable to a long random value.
-3. Set `DATABASE_URL` to a hosted PostgreSQL connection string, such as one from Neon or Supabase.
+3. Set `SUPABASE_DB_URL` to the Supabase Session pooler PostgreSQL connection string (or set `DATABASE_URL` instead).
 4. Deploy with the default project settings. Vercel uses `api/index.py` as the Flask entry point.
 
 SQLite is retained for local development. Vercel's filesystem is temporary, so a hosted PostgreSQL database is required for persistent users, inventory, and meal plans.
