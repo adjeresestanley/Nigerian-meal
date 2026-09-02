@@ -53,17 +53,17 @@ For production, set a strong `SECRET_KEY` environment variable before starting t
 ### Connect to Supabase
 
 1. Create a Supabase project and open **Project Settings > Database**.
-2. Copy the URI connection string. For Vercel or other serverless deployments, use the **Session pooler** connection string.
-3. Add it to `.env` as `SUPABASE_DB_URL` and replace the password placeholder. The URL must include `sslmode=require`.
+2. Copy the direct URI connection string for local development, or the **Session pooler** connection string for Vercel and other serverless deployments.
+3. Add it to `.env` as `DATABASE_URL` and replace the password placeholder. The URL must include `sslmode=require`.
 4. Start the app. SQLAlchemy creates the tables and seeds the recipe catalog on the first startup.
 
-The backend connects directly to Supabase PostgreSQL through SQLAlchemy; the Supabase URL and publishable key are not needed for this server-rendered Flask application. `DATABASE_URL` remains supported as a fallback for other PostgreSQL providers.
+The backend connects directly to Supabase PostgreSQL through SQLAlchemy; the Supabase URL and publishable key are not needed for this server-rendered Flask application. `SUPABASE_DB_URL` remains supported as a fallback for older deployments.
 
 ## Deploy to Vercel
 
 1. Import this repository into Vercel.
 2. Set the `SECRET_KEY` environment variable to a long random value.
-3. Set `SUPABASE_DB_URL` to the Supabase Session pooler PostgreSQL connection string (or set `DATABASE_URL` instead).
+3. Set `DATABASE_URL` to the Supabase Session pooler PostgreSQL connection string.
 4. Deploy with the default project settings. Vercel uses `api/index.py` as the Flask entry point.
 
 SQLite is retained for local development. Vercel's filesystem is temporary, so a hosted PostgreSQL database is required for persistent users, inventory, and meal plans.

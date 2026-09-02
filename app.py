@@ -12,9 +12,11 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-only-change-this-secret')
-database_url = os.environ.get('SUPABASE_DB_URL') or os.environ.get('DATABASE_URL')
+database_url = os.environ.get('DATABASE_URL') or os.environ.get('SUPABASE_DB_URL')
 if database_url and database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
+if database_url and database_url.startswith(('postgresql://', 'postgresql+psycopg://')) and 'sslmode=' not in database_url:
+    database_url += '&sslmode=require' if '?' in database_url else '?sslmode=require'
 if not database_url:
     if os.environ.get('VERCEL'):
         raise RuntimeError('DATABASE_URL must be configured with a persistent PostgreSQL database on Vercel.')
