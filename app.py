@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 from urllib.parse import urlparse, parse_qs, quote
 from sqlalchemy import inspect, text
+from sqlalchemy.pool import NullPool
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,12 +22,15 @@ if not database_url:
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'poolclass': NullPool
+}
 if database_url.startswith(('postgresql://', 'postgresql+psycopg://')):
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'].update({
         'pool_pre_ping': True,
         'pool_recycle': 300,
         'connect_args': {'sslmode': 'require'} if 'sslmode=' not in database_url else {}
-    }
+    })
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 secure_cookies = os.environ.get('SESSION_COOKIE_SECURE', '').lower() in {'1', 'true', 'yes'}
