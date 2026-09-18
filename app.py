@@ -622,6 +622,46 @@ def get_recommendations(user_id, category_filter=None):
     candidates.sort(key=lambda x: x["match_score"], reverse=True)
     return candidates
 
+def get_daily_meal_recommendation(user_id=None, recommendation_date=None):
+    """Select one stable daily meal from eligible recipes."""
+    recommendation_date = recommendation_date or date.today()
+
+    if user_id:
+        candidates = get_recommendations(user_id)
+        personalized = True
+    else:
+        candidates = [
+            {"recipe": recipe, "match_score": 0, "matched_count": 0, "total_ingredients": 0}
+            for recipe in Recipe.query.order_by(Recipe.id).all()
+        ]
+        personalized = False
+
+    if not candidates:
+        return None
+
+    selected = candidates[recommendation_date.toordinal() % len(candidates)]
+    recipe = selected["recipe"]
+    available_ingredient_ids = set()
+    if user_id:
+        available_ingredient_ids = {
+            inventory_item.ingredient_id
+            for inventory_item in Inventory.query.filter_by(user_id=user_id).all()
+            if inventory_item.quantity > 0
+        }
+
+    available_ingredients = [
+        recipe_ingredient.ingredient.name
+        for recipe_ingredient in recipe.ingredients
+        if recipe_ingredient.ingredient_id in available_ingredient_ids
+    ]
+
+    return {
+        "recipe": recipe,
+        "available_ingredients": available_ingredients,
+        "match_score": selected["match_score"],
+        "personalized": personalized
+    }
+
 def generate_shopping_list(user_id, meal_plan_id):
     """Compare meal plan ingredients against inventory and return missing items."""
     meal_plan = MealPlan.query.get(meal_plan_id)
@@ -669,7 +709,9 @@ def generate_shopping_list(user_id, meal_plan_id):
 @app.route('/')
 def index():
     recipe_count = Recipe.query.count()
-    return render_template('index.html', recipe_count=recipe_count)
+    user_id = current_user.id if current_user.is_authenticated else None
+    daily_meal = get_daily_meal_recommendation(user_id)
+    return render_template('index.html', recipe_count=recipe_count, daily_meal=daily_meal)
 
 @app.route('/images/<path:filename>')
 def recipe_image(filename):
