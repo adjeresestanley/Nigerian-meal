@@ -21,22 +21,26 @@
                         <h5 class="fw-bold mb-0"><i class="bi bi-calendar-day me-2" style="color: var(--primary-green);"></i>{{ day }}</h5>
                     </div>
                     <div class="card-body">
-                        <label class="form-label fw-semibold">Select Dinner</label>
-                        <select name="recipe_{{ day }}" class="form-select">
-                            <option value="">-- Choose a recipe --</option>
-                            {% for item in candidates %}
-                            {% set recipe = item.recipe %}
-                            <option value="{{ recipe.id }}" {% if plan_items.get(day) and plan_items[day].recipe_id == recipe.id %}selected{% endif %}>
-                                {{ recipe.name }} ({{ item.match_score }}% match)
-                            </option>
-                            {% endfor %}
-                        </select>
-                        {% if plan_items.get(day) %}
-                        <div class="mt-3 p-2 rounded" style="background: var(--light-green);">
-                            <small class="fw-semibold">Currently selected:</small><br>
-                            <span>{{ plan_items[day].recipe.name }}</span>
+                        {% for meal_type in meal_types %}
+                        {% set planned = plan_items.get((day, meal_type)) %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="recipe-{{ day }}-{{ meal_type }}">
+                                {% if meal_type == 'Breakfast' %}🌅{% elif meal_type == 'Lunch' %}🍲{% else %}🌙{% endif %} {{ meal_type }}
+                            </label>
+                            <select id="recipe-{{ day }}-{{ meal_type }}" name="recipe_{{ day }}_{{ meal_type }}" class="form-select">
+                                <option value="">-- No meal planned --</option>
+                                {% for item in candidates %}
+                                {% set recipe = item.recipe %}
+                                <option value="{{ recipe.id }}" {% if planned and planned.recipe_id == recipe.id %}selected{% endif %}>
+                                    {{ recipe.name }} ({{ item.match_score }}% match)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if planned %}
+                            <a href="{{ url_for('recipe_detail', recipe_id=planned.recipe.id) }}" class="small text-decoration-none">View {{ planned.recipe.name }}</a>
+                            {% endif %}
                         </div>
-                        {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
             </div>

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import date, datetime
 import os
 from urllib.parse import urlparse, parse_qs, quote
 from sqlalchemy import inspect, text
@@ -736,7 +736,15 @@ def logout():
 def dashboard():
     inventory_count = Inventory.query.filter_by(user_id=current_user.id).count()
     meal_plan = MealPlan.query.filter_by(user_id=current_user.id).order_by(MealPlan.created_at.desc()).first()
-    return render_template('dashboard.html', inventory_count=inventory_count, meal_plan=meal_plan)
+    candidates = get_recommendations(current_user.id)
+    suggested_meal = candidates[date.today().toordinal() % len(candidates)]['recipe'] if candidates else Recipe.query.order_by(Recipe.id).first()
+    return render_template(
+        'dashboard.html',
+        inventory_count=inventory_count,
+        meal_plan=meal_plan,
+        suggested_meal=suggested_meal,
+        today_day=date.today().strftime('%A')
+    )
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -904,11 +912,17 @@ def meal_plan():
         MealPlanItem.query.filter_by(meal_plan_id=existing.id).delete()
 
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        meal_types = ['Breakfast', 'Lunch', 'Dinner']
         for day in days:
-            recipe_id = request.form.get(f'recipe_{day}')
-            if recipe_id:
-                item = MealPlanItem(meal_plan_id=existing.id, recipe_id=int(recipe_id), day_of_week=day, meal_type='Dinner')
-                db.session.add(item)
+            for meal_type in meal_types:
+                recipe_id = request.form.get(f'recipe_{day}_{meal_type}', type=int)
+                if recipe_id:
+                    db.session.add(MealPlanItem(
+                        meal_plan_id=existing.id,
+                        recipe_id=recipe_id,
+                        day_of_week=day,
+                        meal_type=meal_type
+                    ))
 
         db.session.commit()
         flash('Meal plan saved successfully.', 'success')
@@ -918,11 +932,46 @@ def meal_plan():
     plan_items = {}
     if current_plan:
         for item in current_plan.items:
-            plan_items[item.day_of_week] = item
+            plan_items[(item.day_of_week, item.meal_type or 'Dinner')] = item
 
     candidates = get_recommendations(current_user.id)
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    return render_template('meal_plan.html', days=days, candidates=candidates, plan_items=plan_items)
+    meal_types = ['Breakfast', 'Lunch', 'Dinner']
+    return render_template('meal_plan.html', days=days, meal_types=meal_types, candidates=candidates, plan_items=plan_items)
+
+@app.route('/meal-plan/add', methods=['POST'])
+@login_required
+def add_to_meal_plan():
+    recipe_id = request.form.get('recipe_id', type=int)
+    day_of_week = request.form.get('day_of_week')
+    meal_type = request.form.get('meal_type', 'Dinner')
+    valid_days = {'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'}
+    valid_meal_types = {'Breakfast', 'Lunch', 'Dinner'}
+    recipe = Recipe.query.get(recipe_id) if recipe_id else None
+    if not recipe or day_of_week not in valid_days or meal_type not in valid_meal_types:
+        flash('Please choose a valid recipe and meal slot.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    existing = MealPlan.query.filter_by(user_id=current_user.id).order_by(MealPlan.created_at.desc()).first()
+    if not existing:
+        existing = MealPlan(user_id=current_user.id)
+        db.session.add(existing)
+        db.session.flush()
+    planned = MealPlanItem.query.filter_by(
+        meal_plan_id=existing.id, day_of_week=day_of_week, meal_type=meal_type
+    ).first()
+    if planned:
+        planned.recipe_id = recipe.id
+    else:
+        db.session.add(MealPlanItem(
+            meal_plan_id=existing.id,
+            recipe_id=recipe.id,
+            day_of_week=day_of_week,
+            meal_type=meal_type
+        ))
+    db.session.commit()
+    flash(f'{recipe.name} added to your {day_of_week} {meal_type} plan.', 'success')
+    return redirect(url_for('dashboard'))
 
 @app.route('/shopping-list')
 @login_required
