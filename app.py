@@ -3,9 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime
+from functools import lru_cache
 import os
 from urllib.parse import urlparse, parse_qs, quote
 from sqlalchemy import inspect, text
+from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import load_only
 from sqlalchemy.pool import NullPool
 from dotenv import load_dotenv
 
@@ -98,6 +101,7 @@ class Recipe(db.Model):
     image_url = db.Column(db.String(300), default='')
     youtube_url = db.Column(db.String(300), default='')
     dietary_tags = db.Column(db.String(200), default='')
+    __table_args__ = (db.Index('ix_recipe_category', 'category'),)
 
     ingredients = db.relationship('RecipeIngredient', backref='recipe', lazy=True, cascade='all, delete-orphan')
 
@@ -113,6 +117,7 @@ class RecipeIngredient(db.Model):
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
     ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id'), nullable=False)
     quantity = db.Column(db.Float, default=1.0)
+    __table_args__ = (db.Index('ix_recipe_ingredient_recipe', 'recipe_id'),)
 
     ingredient = db.relationship('Ingredient')
 
@@ -122,6 +127,7 @@ class Inventory(db.Model):
     ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id'), nullable=False)
     quantity = db.Column(db.Float, default=0.0)
     price_per_unit = db.Column(db.Float, nullable=True)
+    __table_args__ = (db.Index('ix_inventory_user_ingredient', 'user_id', 'ingredient_id'),)
 
     ingredient = db.relationship('Ingredient')
 
@@ -130,6 +136,7 @@ class MealPlan(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     week_start = db.Column(db.Date, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.Index('ix_meal_plan_user_created', 'user_id', 'created_at'),)
 
     items = db.relationship('MealPlanItem', backref='meal_plan', lazy=True, cascade='all, delete-orphan')
 
@@ -139,6 +146,7 @@ class MealPlanItem(db.Model):
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
     day_of_week = db.Column(db.String(10), nullable=False)
     meal_type = db.Column(db.String(20), default='Dinner')
+    __table_args__ = (db.Index('ix_meal_plan_item_plan_slot', 'meal_plan_id', 'day_of_week', 'meal_type'),)
 
     recipe = db.relationship('Recipe')
 
@@ -521,7 +529,9 @@ def seed_database():
 def update_recipe_images():
     """Backfill image filenames for recipes created before image support."""
     changed = False
-    for recipe in Recipe.query.all():
+    for recipe in Recipe.query.filter(
+        db.or_(Recipe.image_url.is_(None), Recipe.image_url == '')
+    ).all():
         image_name = RECIPE_IMAGES.get(recipe.name, '')
         if image_name and recipe.image_url != image_name:
             recipe.image_url = image_name
@@ -547,7 +557,9 @@ def get_recommendations(user_id, category_filter=None):
     user_inventory = Inventory.query.filter_by(user_id=user_id).all()
     user_ingredient_ids = {inv.ingredient_id: inv.quantity for inv in user_inventory}
 
-    query = Recipe.query
+    query = Recipe.query.options(
+        joinedload(Recipe.ingredients).joinedload(RecipeIngredient.ingredient)
+    )
     if category_filter:
         query = query.filter_by(category=category_filter)
     recipes = query.all()
@@ -558,7 +570,7 @@ def get_recommendations(user_id, category_filter=None):
         if recipe.calories_per_serving > calorie_limit:
             continue
 
-        recipe_ingredients = RecipeIngredient.query.filter_by(recipe_id=recipe.id).all()
+        recipe_ingredients = recipe.ingredients
         ingredient_names = [ri.ingredient.name.lower() for ri in recipe_ingredients]
 
         has_allergen = False
@@ -616,7 +628,13 @@ def get_recommendations(user_id, category_filter=None):
             "recipe": recipe,
             "match_score": round(match_score, 1),
             "matched_count": matched if recipe_ing_ids else 0,
-            "total_ingredients": len(recipe_ing_ids)
+            "total_ingredients": len(recipe_ing_ids),
+            "available_ingredients": [
+                ri.ingredient.name
+                for ri in recipe_ingredients
+                if ri.ingredient_id in user_ingredient_ids
+                and user_ingredient_ids[ri.ingredient_id] > 0
+            ]
         })
 
     candidates.sort(key=lambda x: x["match_score"], reverse=True)
@@ -632,7 +650,12 @@ def get_daily_meal_recommendation(user_id=None, recommendation_date=None):
     else:
         candidates = [
             {"recipe": recipe, "match_score": 0, "matched_count": 0, "total_ingredients": 0}
-            for recipe in Recipe.query.order_by(Recipe.id).all()
+            for recipe in Recipe.query.options(
+                load_only(
+                    Recipe.id, Recipe.name, Recipe.category, Recipe.description,
+                    Recipe.calories_per_serving, Recipe.prep_time_minutes, Recipe.image_url
+                )
+            ).order_by(Recipe.id).all()
         ]
         personalized = False
 
@@ -641,23 +664,9 @@ def get_daily_meal_recommendation(user_id=None, recommendation_date=None):
 
     selected = candidates[recommendation_date.toordinal() % len(candidates)]
     recipe = selected["recipe"]
-    available_ingredient_ids = set()
-    if user_id:
-        available_ingredient_ids = {
-            inventory_item.ingredient_id
-            for inventory_item in Inventory.query.filter_by(user_id=user_id).all()
-            if inventory_item.quantity > 0
-        }
-
-    available_ingredients = [
-        recipe_ingredient.ingredient.name
-        for recipe_ingredient in recipe.ingredients
-        if recipe_ingredient.ingredient_id in available_ingredient_ids
-    ]
-
     return {
         "recipe": recipe,
-        "available_ingredients": available_ingredients,
+        "available_ingredients": selected.get("available_ingredients", []),
         "match_score": selected["match_score"],
         "personalized": personalized
     }
@@ -670,19 +679,24 @@ def generate_shopping_list(user_id, meal_plan_id):
 
     needed = {}
 
-    for item in meal_plan.items:
-        recipe_ings = RecipeIngredient.query.filter_by(recipe_id=item.recipe_id).all()
-        for ri in recipe_ings:
-            if ri.ingredient_id in needed:
-                needed[ri.ingredient_id] += ri.quantity
-            else:
-                needed[ri.ingredient_id] = ri.quantity
+    recipe_ids = {item.recipe_id for item in meal_plan.items}
+    recipe_ingredients = RecipeIngredient.query.filter(
+        RecipeIngredient.recipe_id.in_(recipe_ids)
+    ).options(joinedload(RecipeIngredient.ingredient)).all()
+    for recipe_ingredient in recipe_ingredients:
+        if recipe_ingredient.ingredient_id in needed:
+            needed[recipe_ingredient.ingredient_id] += recipe_ingredient.quantity
+        else:
+            needed[recipe_ingredient.ingredient_id] = recipe_ingredient.quantity
 
-    user_inventory = Inventory.query.filter_by(user_id=user_id).all()
+    user_inventory = Inventory.query.filter_by(user_id=user_id).options(
+        joinedload(Inventory.ingredient)
+    ).all()
     inv_dict = {
         inv.ingredient_id: {
             'quantity': inv.quantity,
-            'price_per_unit': inv.price_per_unit
+            'price_per_unit': inv.price_per_unit,
+            'ingredient': inv.ingredient
         }
         for inv in user_inventory
     }
@@ -693,7 +707,13 @@ def generate_shopping_list(user_id, meal_plan_id):
         qty_have = inventory_item.get('quantity', 0)
         qty_missing = max(0, qty_needed - qty_have)
         if qty_missing > 0:
-            ingredient = Ingredient.query.get(ing_id)
+            ingredient = inventory_item.get('ingredient')
+            if ingredient is None:
+                ingredient = next(
+                    recipe_ingredient.ingredient
+                    for recipe_ingredient in recipe_ingredients
+                    if recipe_ingredient.ingredient_id == ing_id
+                )
             unit_price = inventory_item.get('price_per_unit') or ingredient.price_per_unit
             shopping_list.append({
                 "ingredient": ingredient,
@@ -706,12 +726,22 @@ def generate_shopping_list(user_id, meal_plan_id):
 
     return shopping_list
 
+@lru_cache(maxsize=1)
+def recipe_categories():
+    return tuple(
+        category
+        for (category,) in db.session.query(Recipe.category).distinct().order_by(Recipe.category).all()
+    )
+
+@lru_cache(maxsize=1)
+def recipe_count():
+    return Recipe.query.count()
+
 @app.route('/')
 def index():
-    recipe_count = Recipe.query.count()
     user_id = current_user.id if current_user.is_authenticated else None
     daily_meal = get_daily_meal_recommendation(user_id)
-    return render_template('index.html', recipe_count=recipe_count, daily_meal=daily_meal)
+    return render_template('index.html', recipe_count=recipe_count(), daily_meal=daily_meal)
 
 @app.route('/images/<path:filename>')
 def recipe_image(filename):
@@ -778,8 +808,8 @@ def logout():
 def dashboard():
     inventory_count = Inventory.query.filter_by(user_id=current_user.id).count()
     meal_plan = MealPlan.query.filter_by(user_id=current_user.id).order_by(MealPlan.created_at.desc()).first()
-    candidates = get_recommendations(current_user.id)
-    suggested_meal = candidates[date.today().toordinal() % len(candidates)]['recipe'] if candidates else Recipe.query.order_by(Recipe.id).first()
+    daily_meal = get_daily_meal_recommendation(current_user.id)
+    suggested_meal = daily_meal['recipe'] if daily_meal else Recipe.query.order_by(Recipe.id).first()
     return render_template(
         'dashboard.html',
         inventory_count=inventory_count,
@@ -900,9 +930,12 @@ def recipes():
         query = query.filter_by(category=category)
     if search:
         query = query.filter(db.or_(Recipe.name.ilike(f'%{search}%'), Recipe.description.ilike(f'%{search}%')))
-    all_recipes = query.order_by(Recipe.name).all()
-    categories = db.session.query(Recipe.category).distinct().all()
-    return render_template('recipes.html', recipes=all_recipes, categories=[c[0] for c in categories], selected_category=category, search=search)
+    all_recipes = query.options(load_only(
+        Recipe.id, Recipe.name, Recipe.category, Recipe.description,
+        Recipe.calories_per_serving, Recipe.estimated_cost,
+        Recipe.prep_time_minutes, Recipe.image_url
+    )).order_by(Recipe.name).all()
+    return render_template('recipes.html', recipes=all_recipes, categories=recipe_categories(), selected_category=category, search=search)
 
 @app.route('/recipe/<int:recipe_id>')
 def recipe_detail(recipe_id):
@@ -938,8 +971,7 @@ def recipe_detail(recipe_id):
 def recommendations():
     category = request.args.get('category', '')
     candidates = get_recommendations(current_user.id, category_filter=category if category else None)
-    categories = db.session.query(Recipe.category).distinct().all()
-    return render_template('recommendations.html', candidates=candidates, categories=[c[0] for c in categories], selected_category=category)
+    return render_template('recommendations.html', candidates=candidates, categories=recipe_categories(), selected_category=category)
 
 @app.route('/meal-plan', methods=['GET', 'POST'])
 @login_required
@@ -1045,6 +1077,9 @@ def initialize_database():
                 connection.execute(text("ALTER TABLE recipe ADD COLUMN youtube_url VARCHAR(300) DEFAULT ''"))
         seed_database()
         update_recipe_images()
+        for table in (Recipe, RecipeIngredient, Inventory, MealPlan, MealPlanItem):
+            for index in table.__table__.indexes:
+                index.create(bind=db.engine, checkfirst=True)
 
 initialize_database()
 
