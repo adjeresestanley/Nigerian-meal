@@ -26,6 +26,12 @@ SIDE_DISH_NAMES = [
     "Akara",
     "Moi Moi",
     "Fried Plantain & Egg",
+    "Stew",
+]
+
+LUNCH_NAMES = [
+    "Ofada Rice & Stew",
+    "Rice and Stew",
 ]
 
 
@@ -34,5 +40,9 @@ with app.app_context():
         Recipe.name.in_(SIDE_DISH_NAMES),
         Recipe.category != "Side Dish",
     ).update({"category": "Side Dish"}, synchronize_session=False)
+    lunch_updated = Recipe.query.filter(
+        Recipe.name.in_(LUNCH_NAMES),
+        Recipe.category != "Lunch",
+    ).update({"category": "Lunch"}, synchronize_session=False)
     db.session.commit()
-    print(f"Updated {updated} recipes to Side Dish.")
+    print(f"Updated {updated} recipes to Side Dish and {lunch_updated} recipes to Lunch.")

@@ -171,7 +171,8 @@ LEGACY_CATEGORY_MAP = {
     'Akara': 'Breakfast',
     'Pepper Soup': 'Dinner',
     'Ofada Rice & Stew': 'Lunch',
-    'Stew': 'Lunch',
+    'Rice and Stew': 'Lunch',
+    'Stew': 'Side Dish',
     'Beans & Plantain': 'Breakfast',
     'Yam Porridge (Asaro)': 'Lunch',
     'Coconut Rice': 'Lunch',
@@ -611,7 +612,7 @@ def seed_database(force=False):
         },
         {
             "name": "Stew",
-            "category": "Stew",
+            "category": "Side Dish",
             "description": "Rich Nigerian tomato stew made with peppers, onions, and a generous helping of palm oil.",
             "instructions": "1. Blend tomatoes and peppers until smooth. This is a perfect recipe for utilizing any bruised or overripe tomatoes before they spoil. 2. Fry onions in palm oil over medium heat until fragrant. 3. Add the blended mix and cook for 10 to 15 minutes, stirring regularly until reduced. 4. Stir in crayfish, thyme, curry powder, seasoning, and salt, simmering so flavors deepen. 5. Add chicken and enough stock to keep it saucy. 6. Cook until glossy. Make a large batch and freeze portions to use throughout the week.",
             "calories": 320,
