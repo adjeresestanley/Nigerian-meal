@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 import os
 from urllib.parse import urlparse, parse_qs, quote
@@ -1179,7 +1179,7 @@ def recipe_count():
     return Recipe.query.count()
 
 
-def build_recommended_weekly_plan(user_id):
+def build_recommended_weekly_plan(user_id, week_start=None):
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     meal_types = ['Breakfast', 'Lunch', 'Dinner']
     user = User.query.get(user_id)
@@ -1202,7 +1202,8 @@ def build_recommended_weekly_plan(user_id):
     if any(not candidates_by_type[meal_type] for meal_type in meal_types):
         return {}
 
-    week_key = date.today().isocalendar()
+    week_start = week_start or (date.today() - timedelta(days=date.today().weekday()))
+    week_key = week_start.isocalendar()
     week_seed = week_key.year * 53 + week_key.week
     rotation_rank = {}
     for meal_type in meal_types:
@@ -1264,14 +1265,18 @@ def build_recommended_weekly_plan(user_id):
     return {'weekly_plan': weekly_plan, 'calorie_target': calorie_target}
 
 
-def save_generated_meal_plan(plan_data):
+def save_generated_meal_plan(plan_data, week_start=None):
     week_plan = (plan_data or {}).get('weekly_plan', plan_data or {})
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     meal_types = ['Breakfast', 'Lunch', 'Dinner']
+    week_start = week_start or (date.today() - timedelta(days=date.today().weekday()))
 
-    meal_plan = MealPlan.query.filter_by(user_id=current_user.id).order_by(MealPlan.created_at.desc()).first()
+    meal_plan = MealPlan.query.filter_by(
+        user_id=current_user.id,
+        week_start=week_start,
+    ).first()
     if not meal_plan:
-        meal_plan = MealPlan(user_id=current_user.id)
+        meal_plan = MealPlan(user_id=current_user.id, week_start=week_start)
         db.session.add(meal_plan)
         db.session.flush()
 
@@ -1297,6 +1302,27 @@ def save_generated_meal_plan(plan_data):
             ))
 
     db.session.commit()
+
+
+def structure_weekly_plan(meal_plan):
+    """Convert saved meal-plan rows into the weekly template's day mapping."""
+    formatted_plan = {}
+    for item in meal_plan.items:
+        day_plan = formatted_plan.setdefault(item.day_of_week, {})
+        meal_type = item.meal_type or 'Dinner'
+        day_plan[meal_type] = {
+            'recipe_id': item.recipe_id,
+            'meal_name': item.recipe.name,
+            'calories': item.recipe.calories_per_serving,
+        }
+
+    for day_plan in formatted_plan.values():
+        day_plan['day_total_calories'] = sum(
+            meal['calories']
+            for meal in day_plan.values()
+            if isinstance(meal, dict)
+        )
+    return formatted_plan
 
 
 @app.route('/')
@@ -1601,15 +1627,55 @@ def recommended_weekly_plan():
     )
 
 
+@app.route('/weekly-plan')
+@login_required
+def weekly_plan():
+    today = date.today()
+    current_monday = today - timedelta(days=today.weekday())
+    meal_plan = MealPlan.query.filter_by(
+        user_id=current_user.id,
+        week_start=current_monday,
+    ).first()
+
+    if meal_plan is None:
+        generated_plan = build_recommended_weekly_plan(current_user.id, current_monday)
+        if not generated_plan:
+            flash('No recipes match your current preferences.', 'warning')
+            return render_template(
+                'recommended_weekly_plan.html',
+                days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                meal_types=['Breakfast', 'Lunch', 'Dinner'],
+                recommended_plan={},
+                calorie_target=None,
+                current_day=today.strftime('%A'),
+            )
+        save_generated_meal_plan(generated_plan, current_monday)
+        meal_plan = MealPlan.query.filter_by(
+            user_id=current_user.id,
+            week_start=current_monday,
+        ).first()
+
+    return render_template(
+        'recommended_weekly_plan.html',
+        days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        meal_types=['Breakfast', 'Lunch', 'Dinner'],
+        recommended_plan=structure_weekly_plan(meal_plan),
+        calorie_target=current_user.calorie_limit or 800,
+        current_day=today.strftime('%A'),
+        week_start=current_monday,
+    )
+
+
 @app.route('/meal-plan/generate', methods=['POST'])
 @login_required
 def generate_meal_plan():
     try:
-        plan = build_recommended_weekly_plan(current_user.id)
+        current_monday = date.today() - timedelta(days=date.today().weekday())
+        plan = build_recommended_weekly_plan(current_user.id, current_monday)
         if not plan:
             flash('No recipes match your current preferences.', 'warning')
             return redirect(url_for('recommended_weekly_plan'))
-        save_generated_meal_plan(plan)
+        save_generated_meal_plan(plan, current_monday)
         flash('Recommended meal plan generated successfully.', 'success')
     except Exception as exc:
         flash(f'Unable to generate a recommended meal plan right now: {exc}', 'danger')

@@ -244,7 +244,7 @@
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('recipes') }}">Recipes</a></li>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('recommendations') }}">Recommendations</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('recommended_weekly_plan') }}">Recommended Weekly Plan</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('weekly_plan') }}">Recommended Weekly Plan</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('meal_plan') }}">Meal Plan</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('shopping_list') }}">Shopping List</a></li>
                     {% endif %}
