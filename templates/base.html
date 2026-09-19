@@ -27,6 +27,27 @@
             font-family: 'DM Sans', sans-serif;
             line-height: 1.6;
         }
+        body > .container,
+        body > main,
+        body > .hero-section,
+        body > .row {
+            animation: content-enter 0.45s ease-out both;
+        }
+        a, button, .btn, .form-control, .form-select, .nav-link,
+        .card, .sidebar-link, .recipe-img {
+            transition: color 0.2s ease, background-color 0.2s ease,
+                border-color 0.2s ease, box-shadow 0.2s ease,
+                transform 0.2s ease, opacity 0.2s ease;
+        }
+        a:focus-visible, button:focus-visible, .form-control:focus-visible,
+        .form-select:focus-visible {
+            outline: 3px solid rgba(242, 193, 78, 0.7);
+            outline-offset: 3px;
+        }
+        @keyframes content-enter {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         h1, h2, h3, h4, h5, h6, .navbar-brand {
             font-family: 'Playfair Display', Georgia, serif;
         }
@@ -36,11 +57,21 @@
             box-shadow: 0 5px 18px rgba(22, 55, 45, 0.16);
             padding: 0.85rem 0;
         }
+        @media (min-width: 992px) {
+            .navbar > .container {
+                max-width: calc(100% - 2rem);
+            }
+            .navbar .nav-link {
+                font-size: 0.84rem;
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+        }
         .navbar-brand {
             background-color: #fff;
             border-radius: 5px;
             color: var(--dark) !important;
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             letter-spacing: 0;
             padding: 0.25rem 0.6rem;
         }
@@ -57,8 +88,11 @@
             background: rgba(242, 193, 78, 0.16);
             color: #fff !important;
         }
-        .navbar-toggler { border-color: rgba(255,255,255,0.3); }
+        .navbar-toggler { border-color: rgba(255,255,255,0.3); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .navbar-toggler:hover { border-color: var(--sun-yellow); }
         .btn { border-radius: 5px; font-weight: 700; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
         .btn-primary {
             background-color: var(--primary-green);
             border-color: var(--primary-green);
@@ -70,9 +104,9 @@
             border: 1px solid rgba(22, 55, 45, 0.09);
             border-radius: 7px;
             box-shadow: 0 8px 24px rgba(22, 55, 45, 0.06);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(22, 55, 45, 0.11); }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(22, 55, 45, 0.11); }
+        .card:hover .recipe-img { transform: scale(1.02); }
         .hero-section {
             background-color: var(--primary-green);
             background-image: linear-gradient(125deg, rgba(22,55,45,.96), rgba(23,107,82,.88)), repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(255,255,255,.035) 15px, rgba(255,255,255,.035) 16px);
@@ -184,6 +218,14 @@
             color: #dc3545;
             font-size: 2rem;
         }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -202,6 +244,7 @@
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('recipes') }}">Recipes</a></li>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('recommendations') }}">Recommendations</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('recommended_weekly_plan') }}">Recommended Weekly Plan</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('meal_plan') }}">Meal Plan</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('shopping_list') }}">Shopping List</a></li>
                     {% endif %}

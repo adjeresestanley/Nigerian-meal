@@ -17,49 +17,6 @@
 </div>
 
 <div class="container mb-5">
-    <div class="daily-meal-card card overflow-hidden">
-        {% if daily_meal %}
-        <div class="row g-0 align-items-stretch">
-            <div class="col-md-5">
-                {% if daily_meal.recipe.image_url %}
-                <img class="daily-meal-img" src="{{ url_for('static', filename='images/' ~ daily_meal.recipe.image_url|lower|replace(' ', '-')) }}" alt="{{ daily_meal.recipe.name }}">
-                {% else %}
-                <div class="daily-meal-placeholder"><i class="bi bi-egg-fried"></i></div>
-                {% endif %}
-            </div>
-            <div class="col-md-7 p-4 p-lg-5 d-flex flex-column justify-content-center">
-                <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-                    <span class="badge-category">Today's Suggested Meal</span>
-                    {% if daily_meal.personalized %}<span class="text-muted small"><i class="bi bi-stars me-1"></i>Personalized for you</span>{% endif %}
-                </div>
-                <h2 class="fw-bold mb-2">{{ daily_meal.recipe.name }}</h2>
-                <p class="text-muted mb-4">{{ daily_meal.recipe.description }}</p>
-                <div class="row g-3 mb-4">
-                    <div class="col-6 col-lg-4"><small class="text-muted d-block">Calories</small><strong><i class="bi bi-fire text-danger me-1"></i>{{ daily_meal.recipe.calories_per_serving }} kcal</strong></div>
-                    <div class="col-6 col-lg-4"><small class="text-muted d-block">Preparation</small><strong><i class="bi bi-clock me-1"></i>{{ daily_meal.recipe.prep_time_minutes }} min</strong></div>
-                    <div class="col-12 col-lg-4"><small class="text-muted d-block">Category</small><strong>{{ daily_meal.recipe.category }}</strong></div>
-                </div>
-                {% if daily_meal.personalized %}
-                <div class="small mb-4">
-                    <strong class="inventory-match-label"><i class="bi bi-box-seam me-1"></i>Available from your inventory:</strong>
-                    {% if daily_meal.available_ingredients %}
-                    <span class="text-muted">{{ daily_meal.available_ingredients|join(', ') }}</span>
-                    {% else %}
-                    <span class="text-muted">No main ingredients matched yet.</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-                <a href="{{ url_for('recipe_detail', recipe_id=daily_meal.recipe.id) }}" class="btn btn-primary align-self-start"><i class="bi bi-arrow-right-circle me-2"></i>View Recipe</a>
-            </div>
-        </div>
-        {% else %}
-        <div class="p-5 text-center">
-            <i class="bi bi-sliders2 text-muted fs-1"></i>
-            <h3 class="fw-bold mt-3">No meal matches your current preferences</h3>
-            <p class="text-muted mb-0">Update your profile restrictions to receive a daily suggestion.</p>
-        </div>
-        {% endif %}
-    </div>
 </div>
 
 <div class="container mb-5">

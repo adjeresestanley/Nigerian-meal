@@ -28,6 +28,20 @@
         <div class="col-md-4">
             <div class="card p-4">
                 <div class="d-flex align-items-center">
+                    <div class="feature-icon me-3 mb-0"><i class="bi bi-arrow-repeat"></i></div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Refresh</h5>
+                        <small class="text-muted">Recipe database</small>
+                    </div>
+                </div>
+                <form method="POST" action="{{ url_for('reseed_recipes') }}" class="mt-3">
+                    <button type="submit" class="btn btn-accent btn-sm w-100">Reseed Recipes</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4">
+                <div class="d-flex align-items-center">
                     <div class="feature-icon me-3 mb-0"><i class="bi bi-calendar-week"></i></div>
                     <div>
                         <h5 class="fw-bold mb-0">{{ meal_plan.items|length if meal_plan else 0 }}/7</h5>
@@ -50,45 +64,6 @@
             </div>
         </div>
     </div>
-
-    {% if suggested_meal %}
-    <section class="card overflow-hidden mb-4" aria-labelledby="suggested-meal-heading">
-        <div class="card-body p-0">
-            <div class="p-4 pb-2">
-                <h4 id="suggested-meal-heading" class="fw-bold mb-1">🍽️ Today's Suggested Meal</h4>
-                <p class="text-muted mb-0">A recipe selected for today using your saved preferences and pantry.</p>
-            </div>
-            <div class="row g-0 align-items-stretch">
-                <div class="col-md-5">
-                    {% if suggested_meal.image_url %}
-                    <img class="recipe-img h-100" src="{{ url_for('static', filename='images/' ~ suggested_meal.image_url|lower|replace(' ', '-')) }}" alt="{{ suggested_meal.name }}">
-                    {% else %}
-                    <div class="recipe-img-placeholder h-100">🍲</div>
-                    {% endif %}
-                </div>
-                <div class="col-md-7 p-4">
-                    <span class="badge-category mb-2 d-inline-block">Dinner</span>
-                    <h3 class="fw-bold">{{ suggested_meal.name }}</h3>
-                    <div class="d-flex flex-wrap gap-3 small text-muted mb-3">
-                        <span><i class="bi bi-clock me-1"></i>{{ suggested_meal.prep_time_minutes }} minutes</span>
-                        <span><i class="bi bi-fire me-1 text-danger"></i>{{ suggested_meal.calories_per_serving }} kcal</span>
-                    </div>
-                    <p class="mb-3">{{ suggested_meal.description }}</p>
-                    <p class="small mb-4"><strong>Key ingredients:</strong> {{ suggested_meal.ingredients|map(attribute='ingredient.name')|join(', ') }}</p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ url_for('recipe_detail', recipe_id=suggested_meal.id) }}" class="btn btn-primary">View Recipe</a>
-                        <form method="POST" action="{{ url_for('add_to_meal_plan') }}" class="d-inline">
-                            <input type="hidden" name="recipe_id" value="{{ suggested_meal.id }}">
-                            <input type="hidden" name="day_of_week" value="{{ today_day }}">
-                            <input type="hidden" name="meal_type" value="Dinner">
-                            <button type="submit" class="btn btn-accent">Add to Meal Plan</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    {% endif %}
 
     <div class="row">
         <div class="col-md-8">
